@@ -1,0 +1,9 @@
+__pycache__/
+*.duckdb
+*.duckdb.wal
+.venv/
+.DS_Store
+data/raw/
+data/truth/
+data/dashboard_data.json
+data/role_scope_summary.json

@@ -1,0 +1,1 @@
+playwright>=1.40   # only for tests/test_dashboard.py and screenshots; then: python -m playwright install chromium

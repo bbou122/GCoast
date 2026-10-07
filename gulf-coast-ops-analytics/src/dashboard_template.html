@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gulf Coast Builders Operations Dashboard (synthetic data)</title>
+<meta name="description" content="Interactive construction operations analytics dashboard built on entirely synthetic data for a fictional contractor.">
+<style>
+:root{
+  --bg:#f4f6f9; --card:#ffffff; --text:#18212f; --muted:#556072; --border:#dde2ea; --accent:#0b5cab; --accent-soft:#e6f0fb;
+  --bad:#b4410a; --bad-soft:#fdebe0; --warn:#8a6100; --warn-soft:#fff4d6; --good:#00695c; --good-soft:#e0f2ef;
+  --c1:#0072B2; --c2:#E69F00; --c3:#56B4E9; --c4:#009E73; --c5:#D55E00; --c6:#CC79A7; --c7:#8a8f98;
+  --grid:#e3e7ee; --banner:#2a1f6b; --banner-text:#ffffff; --shadow:0 1px 2px rgba(20,30,50,.06);
+}
+:root[data-theme="dark"]{
+  --bg:#0e131a; --card:#161d27; --text:#e9eef5; --muted:#a3b0c2; --border:#29323f; --accent:#6db3f2; --accent-soft:#16283b;
+  --bad:#ff9a62; --bad-soft:#3a2216; --warn:#f0c450; --warn-soft:#352b0c; --good:#58d2bf; --good-soft:#0f2e29;
+  --c1:#4da3e0; --c2:#f2b83a; --c3:#7cc8f3; --c4:#2fc29a; --c5:#ff8a4c; --c6:#e29ac3; --c7:#9aa3b0;
+  --grid:#27303d; --banner:#3a2f8f; --shadow:none;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e131a; --card:#161d27; --text:#e9eef5; --muted:#a3b0c2; --border:#29323f; --accent:#6db3f2; --accent-soft:#16283b;
+    --bad:#ff9a62; --bad-soft:#3a2216; --warn:#f0c450; --warn-soft:#352b0c; --good:#58d2bf; --good-soft:#0f2e29;
+    --c1:#4da3e0; --c2:#f2b83a; --c3:#7cc8f3; --c4:#2fc29a; --c5:#ff8a4c; --c6:#e29ac3; --c7:#9aa3b0;
+    --grid:#27303d; --banner:#3a2f8f; --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+a{color:var(--accent)}
+.banner{background:var(--banner);color:var(--banner-text);padding:8px 16px;font-size:13px;text-align:center}
+.banner strong{letter-spacing:.04em}
+header.top{background:var(--card);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header.top h1{font-size:18px;margin:0;line-height:1.25}
+header.top .sub{color:var(--muted);font-size:13px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.controls label{font-size:13px;color:var(--muted)}
+select,button{font:inherit;color:var(--text)}
+select{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 10px;min-height:38px;max-width:100%}
+.btn{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 12px;min-height:38px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.rolenote{background:var(--warn-soft);color:var(--text);border-left:4px solid var(--warn);padding:8px 16px;font-size:13px}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;padding:8px 12px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5;-webkit-overflow-scrolling:touch}
+nav.tabs button{white-space:nowrap;background:none;border:0;border-bottom:3px solid transparent;padding:9px 12px;cursor:pointer;color:var(--muted);font-weight:600;min-height:40px;border-radius:6px 6px 0 0}
+nav.tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);background:var(--accent-soft)}
+main{max-width:1280px;margin:0 auto;padding:16px}
+h2.page{font-size:20px;margin:4px 0 2px}
+p.lede{color:var(--muted);margin:0 0 14px;max-width:80ch}
+.grid{display:grid;gap:12px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:16px}
+.two{grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);min-width:0}
+.card h3{font-size:15px;margin:0 0 4px;line-height:1.35}
+.card .note{color:var(--muted);font-size:13px;margin:0 0 8px}
+.kpi .label{color:var(--muted);font-size:12.5px;text-transform:uppercase;letter-spacing:.04em}
+.kpi .value{font-size:26px;font-weight:700;line-height:1.2;margin:2px 0}
+.kpi .subtext{font-size:13px;color:var(--muted)}
+.kpi.bad .value{color:var(--bad)} .kpi.warn .value{color:var(--warn)} .kpi.good .value{color:var(--good)}
+.chart{position:relative;height:300px}
+.chart.tall{height:380px}
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.click{cursor:pointer} tr.click:hover{background:var(--accent-soft)}
+.tag{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600;border:1px solid transparent;white-space:nowrap}
+.tag.bad{background:var(--bad-soft);color:var(--bad);border-color:var(--bad)}
+.tag.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
+.tag.good{background:var(--good-soft);color:var(--good);border-color:var(--good)}
+.tag.info{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+details.more summary{cursor:pointer;color:var(--accent);font-weight:600;padding:10px 0}
+details.sql{margin-top:8px;font-size:13px}
+details.sql summary{cursor:pointer;color:var(--accent);font-weight:600}
+details.sql pre{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:auto;max-height:340px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;white-space:pre}
+.empty{color:var(--muted);padding:14px;border:1px dashed var(--border);border-radius:10px}
+.flag{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;padding:8px 0;border-bottom:1px solid var(--border)}
+.flag:last-child{border-bottom:0}
+.flag .where{color:var(--muted);font-size:13px}
+.proj-pick{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+footer{max-width:1280px;margin:8px auto 40px;padding:0 16px;color:var(--muted);font-size:12.5px}
+@media (max-width:640px){
+  main{padding:12px} .kpi .value{font-size:22px} .chart{height:260px} .chart.tall{height:340px}
+  header.top h1{font-size:16px}
+}
+@media print{ nav.tabs,.controls,details.sql{display:none} body{background:#fff} }
+</style>
+</head>
+<body>
+<div class="banner" role="region" aria-label="Synthetic data notice"><strong>SYNTHETIC DATA</strong> &nbsp;|&nbsp; Gulf Coast Builders is a fictional company. Every number here was generated for a portfolio project; none comes from a real business.</div>
+<header class="top">
+  <div>
+    <h1>Gulf Coast Builders: operations dashboard</h1>
+    <div class="sub" id="asof"></div>
+  </div>
+  <div class="controls">
+    <label for="role">View as</label>
+    <select id="role" aria-describedby="rolehelp"></select>
+    <button class="btn" id="theme" type="button" aria-label="Switch between light and dark theme">Theme</button>
+  </div>
+</header>
+<div class="rolenote" id="rolehelp" role="region" aria-label="Access demonstration note"></div>
+<nav class="tabs" aria-label="Dashboard pages"><div role="tablist" id="tabs" style="display:flex;gap:4px"></div></nav>
+<main id="main" tabindex="-1"></main>
+<footer>
+  Portfolio sample built from a seeded synthetic data generator: raw, staging and mart layers in DuckDB, a SQL metric layer, automated data-quality checks and this page. Charts: Chart.js (MIT). Colors follow the Okabe-Ito colour-blind-safe palette; status is always shown with text as well as colour.
+</footer>
+
+<script>/*__CHARTJS__*/</script>
+<script>
+const D = /*__DATA__*/;
+</script>
+<script>
+"use strict";
+/* ============================== helpers ============================== */
+const $ = (s, el = document) => el.querySelector(s);
+const sum = (a, f) => a.reduce((t, r) => t + (+((f ? f(r) : r)) || 0), 0);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const money = (n, d = 1) => {
+  if (n == null || isNaN(n)) return "n/a";
+  const a = Math.abs(n), s = n < 0 ? "-" : "";
+  if (a >= 1e9) return s + "$" + (a / 1e9).toFixed(d) + "B";
+  if (a >= 1e6) return s + "$" + (a / 1e6).toFixed(d) + "M";
+  if (a >= 1e3) return s + "$" + (a / 1e3).toFixed(0) + "K";
+  return s + "$" + a.toFixed(0);
+};
+const num = (n, d = 0) => n == null || isNaN(n) ? "n/a" : (+n).toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: d });
+const pct = (n, d = 1) => n == null || isNaN(n) ? "n/a" : (n * 100).toFixed(d) + "%";
+const pts = (n, d = 1) => n == null || isNaN(n) ? "n/a" : (n >= 0 ? "+" : "") + n.toFixed(d) + " pts";
+const dstr = s => s ? new Date(s + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+const mlabel = s => new Date(s + "T00:00:00").toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+const mt = v => money(v, Math.abs(v) < 1e7 ? 1 : 0);
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const tag = (t, k) => `<span class="tag ${k}">${esc(t)}</span>`;
+const plural = (n, w, p) => `${n} ${n === 1 ? w : (p || w + "s")}`;
+const sqlOf = names => names.filter(n => D.sql[n]).map(n => `-- ${n}\n${D.sql[n]}`).join("\n\n");
+
+/* ============================== role scoping ============================== */
+/* DEMONSTRATION ONLY. All data is in this file; the filter below just shapes the view. See docs/access_matrix.md. */
+const ROLE_NOTES = {
+  exec: "Executive: all projects, all pages.",
+  fin: "Finance: all projects and pages except safety (incident data is removed from this role's view).",
+  bu: "Business Unit Lead: only this unit's projects, pipeline and backlog.",
+  pm: "Project Manager: only the projects this person manages; company-wide pipeline is removed."
+};
+function parseRole(v) {
+  if (v === "exec") return { t: "exec" };
+  if (v === "fin") return { t: "fin" };
+  const [t, x] = v.split("|");
+  return { t, v: x };
+}
+function makeScope(role) {
+  const t = role.t, v = role.v;
+  const projs = D.projects.filter(p => t === "bu" ? p.business_unit === v : t === "pm" ? p.project_manager === v : true);
+  const ids = new Set(projs.map(p => p.project_id));
+  const by = a => a.filter(r => ids.has(r.project_id));
+  const safety = t !== "fin", pipelineOn = t !== "pm";
+  const SAFE_COLS = ["incidents_all", "recordables_all", "trir_12m", "peak_incidents_in_window", "peak_window_start", "safety_cluster"];
+  const S = { role, ids, safety, pipelineOn };
+  S.projects = projs.map(p => { const q = { ...p }; if (!safety) SAFE_COLS.forEach(k => delete q[k]); return q; });
+  ["cost_curve", "billing_curve", "cost_by_code", "change_orders", "po_lines", "long_lead", "three_way", "subcontracts", "commit_vs_budget",
+    "ap_open", "ar_open", "equipment", "rfi_open", "milestones"].forEach(k => S[k] = by(D[k]));
+  S.safety_by_project = safety ? by(D.safety_by_project) : [];
+  S.safety_detail = safety ? by(D.safety_detail) : [];
+  S.pipeline_by_bu = pipelineOn ? D.pipeline_by_bu.filter(r => t !== "bu" || r.business_unit === v) : [];
+  S.pipeline_by_stage = pipelineOn ? D.pipeline_by_stage.filter(r => t !== "bu" || r.business_unit === v) : [];
+  S.backlog = D.backlog.filter(r => t === "bu" ? r.business_unit === v : t === "pm" ? (r.backlog_source === "Active project" && ids.has(r.reference_id)) : true);
+  const mfg = projs.some(p => p.business_unit === "Manufacturing");
+  S.inventoryOn = t === "exec" || t === "fin" || (t === "bu" && v === "Manufacturing") || (t === "pm" && mfg);
+  S.inventory = S.inventoryOn ? D.inventory : [];
+  S.pages = ["exec", "projects", "proc", "cash", "field"].concat(pipelineOn ? ["pipeline"] : []).concat(["quality"]);
+  S.active = S.projects.filter(p => p.status === "Active");
+  return S;
+}
+
+/* ============================== metrics (re-aggregated from SQL view rows) ============================== */
+function kpis(S) {
+  const A = S.active, k = {};
+  k.active = A.length;
+  k.contract = sum(A, p => p.revised_contract_value);
+  k.profit = sum(A, p => p.projected_profit);
+  k.margin = k.contract ? k.profit / k.contract : null;
+  const origC = sum(A, p => p.original_contract_value);
+  k.bidMargin = origC ? sum(A, p => p.original_contract_value * p.bid_margin_pct) / origC : null;
+  const fadeUsd = A.map(p => ({ id: p.project_id, usd: p.margin_fade_dollars, pts: p.margin_fade_pts })).filter(x => x.usd > 0).sort((a, b) => b.usd - a.usd);
+  k.fadeTotal = sum(fadeUsd, x => x.usd);
+  k.fadeTop = fadeUsd.slice(0, 3);
+  k.top3Share = k.fadeTotal ? sum(k.fadeTop, x => x.usd) / k.fadeTotal : null;
+  k.pendingCo = sum(A, p => p.pending_co_revenue);
+  k.pendingCount = sum(A, p => p.pending_co_count);
+  k.backlog = sum(S.backlog, r => r.backlog_amount);
+  k.weighted = sum(S.pipeline_by_bu, r => r.weighted_pipeline);
+  k.coverage = k.backlog ? k.weighted / k.backlog : null;
+  const won = sum(S.pipeline_by_bu, r => r.won_count), lost = sum(S.pipeline_by_bu, r => r.lost_count);
+  k.winRate = won + lost ? won / (won + lost) : null;
+  const rec = sum(S.safety_by_project, r => r.recordables_12m), hrs = sum(S.safety_by_project, r => r.hours_12m);
+  k.trir12 = hrs ? rec * 200000 / hrs : null;
+  k.recordables12 = rec;
+  // procurement
+  const po = S.po_lines, open = po.filter(r => r.is_open), over = po.filter(r => r.is_overdue_open), rcv = po.filter(r => r.status === "Received");
+  k.openPoValue = sum(open, r => r.ordered_amount); k.openPoLines = open.length;
+  k.overduePoLines = over.length; k.overduePoAmt = sum(over, r => r.ordered_amount);
+  k.onTime = rcv.length ? rcv.filter(r => r.days_late_delivered <= 0).length / rcv.length : null;
+  k.longLeadOverdue = over.filter(r => r.is_long_lead).length;
+  const rni = S.three_way.filter(r => r.exception_type === "Received, not invoiced"), inr = S.three_way.filter(r => r.exception_type === "Invoiced, not received");
+  k.rniCount = rni.length; k.rniAmt = sum(rni, r => r.exception_amount);
+  k.inrCount = inr.length; k.inrAmt = sum(inr, r => r.exception_amount);
+  k.priceExc = S.three_way.filter(r => r.exception_type.startsWith("Invoice above")).length;
+  // cash
+  k.apOpen = sum(S.ap_open, r => r.amount_open); k.apOverdue = sum(S.ap_open.filter(r => r.days_past_due > 0), r => r.amount_open);
+  k.apHeld = sum(S.ap_open.filter(r => r.is_held), r => r.amount_open);
+  k.arOpen = sum(S.ar_open, r => r.amount_open); k.arOverdue = sum(S.ar_open.filter(r => r.days_past_due > 0), r => r.amount_open);
+  k.ar90 = sum(S.ar_open.filter(r => r.days_past_due > 90), r => r.amount_open);
+  k.retRecv = sum(A, p => p.retainage_receivable_from_owner); k.retPay = sum(A, p => p.retainage_payable_to_subs);
+  k.subCommitted = sum(S.subcontracts, r => r.committed_total); k.subBilled = sum(S.subcontracts, r => r.billed_to_date);
+  k.subDisputed = sum(S.subcontracts, r => r.disputed_amount);
+  // field
+  k.rfiOpen = sum(A, p => p.rfis_open); k.rfiOverdue = sum(A, p => p.rfis_overdue); k.subLate = sum(A, p => p.submittals_late);
+  k.late = A.filter(p => p.schedule_status === "Late").length; k.atRisk = A.filter(p => p.schedule_status === "At risk").length;
+  const eq = S.equipment, um = sum(eq, r => r.unit_months);
+  k.util = um ? sum(eq, r => r.days_used) / (22 * um) : null;
+  k.idle = sum(eq, r => r.rented_idle_cost);
+  k.belowReorder = S.inventory.filter(r => r.reorder_status === "Below reorder point");
+  return k;
+}
+function vendorStats(S) {
+  const m = {};
+  S.po_lines.forEach(r => {
+    const v = m[r.vendor_name] ||= { name: r.vendor_name, delivered: 0, onTime: 0, lateDays: 0, overdue: 0, ordered: 0 };
+    if (r.status !== "Cancelled") v.ordered += r.ordered_amount;
+    if (r.status === "Received") { v.delivered++; if (r.days_late_delivered <= 0) v.onTime++; v.lateDays += r.days_late_delivered; }
+    if (r.is_overdue_open) v.overdue++;
+  });
+  return Object.values(m).filter(v => v.delivered >= 5).map(v => ({ ...v, rate: v.onTime / v.delivered, avgLate: v.lateDays / v.delivered })).sort((a, b) => a.rate - b.rate);
+}
+
+/* ============================== ui building blocks ============================== */
+const kpi = (label, value, sub, tone = "") => `<div class="card kpi ${tone}"><div class="label">${esc(label)}</div><div class="value">${value}</div><div class="subtext">${sub || ""}</div></div>`;
+function table(cols, rows, o = {}) {
+  if (!rows.length) return `<div class="empty">${esc(o.empty || "Nothing to show for this view.")}</div>`;
+  const head = cols.map(c => `<th class="${c.num ? "num" : ""}">${esc(c.h)}</th>`).join("");
+  const body = rows.map((r, i) => `<tr ${o.click ? `class="click" tabindex="0" data-i="${i}"` : ""}>${cols.map(c => `<td class="${c.num ? "num" : ""}">${c.f ? c.f(r) : esc(r[c.k])}</td>`).join("")}</tr>`).join("");
+  return `<div class="tablewrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+const sqlPanel = names => `<details class="sql"><summary>Show the SQL</summary><pre>${esc(sqlOf(names))}</pre></details>`;
+const card = (title, body, o = {}) => `<section class="card" ${o.id ? `id="${o.id}"` : ""}><h3>${title}</h3>${o.note ? `<p class="note">${o.note}</p>` : ""}${body}${o.sql ? sqlPanel(o.sql) : ""}</section>`;
+const chartBox = (id, label, tall) => `<div class="chart ${tall ? "tall" : ""}"><canvas id="${id}" role="img" aria-label="${esc(label)}"></canvas></div>`;
+
+const charts = {};
+function draw(id, cfg) {
+  const el = document.getElementById(id); if (!el) return;
+  if (charts[id]) charts[id].destroy();
+  const text = cssv("--muted"), grid = cssv("--grid");
+  cfg.options = Object.assign({ responsive: true, maintainAspectRatio: false, animation: false }, cfg.options || {});
+  const o = cfg.options; o.plugins = o.plugins || {};
+  o.plugins.legend = Object.assign({ labels: { color: text, boxWidth: 12, usePointStyle: true } }, o.plugins.legend || {});
+  Object.values(o.scales || {}).forEach(s => { s.ticks = Object.assign({ color: text }, s.ticks || {}); s.grid = Object.assign({ color: grid }, s.grid || {}); if (s.title) s.title.color = text; });
+  charts[id] = new Chart(el, cfg);
+}
+const C = n => cssv("--c" + n);
+
+/* ============================== state & routing ============================== */
+const PAGE_TITLES = { exec: "Executive", projects: "Project drill-down", proc: "Procurement and materials", cash: "Subcontracts and cash", field: "Field operations", pipeline: "Pipeline", quality: "Data quality and definitions" };
+const state = { role: "exec", page: "exec", project: null, theme: null };
+let S, K;
+function go(page, project) { state.page = page; if (project) state.project = project; render(); const m = $("#main"); m.focus({ preventScroll: true }); window.scrollTo({ top: 0 }); }
+function render() {
+  const role = parseRole(state.role);
+  S = makeScope(role); K = kpis(S);
+  if (!S.pages.includes(state.page)) state.page = "exec";
+  if (!state.project || !S.ids.has(state.project)) {
+    const a = S.active.slice().sort((x, y) => (x.fade_rank ?? 99) - (y.fade_rank ?? 99));
+    state.project = (a[0] || S.projects[0] || {}).project_id;
+  }
+  $("#rolehelp").textContent = "Demonstration only, not security: " + ROLE_NOTES[role.t] + " All data is stored in this page; a real deployment enforces access in the database or Power BI (see docs/access_matrix.md).";
+  $("#tabs").innerHTML = S.pages.map(p => `<button role="tab" type="button" data-p="${p}" aria-selected="${p === state.page}">${PAGE_TITLES[p]}</button>`).join("");
+  $("#tabs").querySelectorAll("button").forEach(b => b.onclick = () => go(b.dataset.p));
+  $("#main").innerHTML = PAGES[state.page]();
+  if (AFTER[state.page]) AFTER[state.page]();
+  document.querySelectorAll("tr.click").forEach(tr => { const f = () => CLICK[state.page]?.(+tr.dataset.i); tr.onclick = f; tr.onkeydown = e => { if (e.key === "Enter") f(); }; });
+}
+const CLICK = {};
+const PAGES = {}, AFTER = {};
+const fadeTone = v => v >= 5 ? "bad" : v >= 2 ? "warn" : "good";
+const schedTag = s => tag(s, s === "Late" ? "bad" : s === "At risk" ? "warn" : "good");
+
+/* ============================== PAGE 1: Executive ============================== */
+function attention() {
+  const A = S.active, out = [];
+  const add = (sev, area, text, where, page, proj) => out.push({ sev, area, text, where, page, proj });
+  K.fadeTop.filter(x => x.pts >= 2).forEach(x => { const p = A.find(q => q.project_id === x.id); add(1, "Margin", `${x.id} ${p.project_name} is projected at ${pct(p.projected_margin_pct)} against a ${pct(p.bid_margin_pct)} bid margin (${pts(-p.margin_fade_pts)} versus bid, ${money(p.margin_fade_dollars)} of profit).`, p.business_unit, "projects", x.id); });
+  A.filter(p => p.pending_pct_of_contract >= 0.1).forEach(p => add(2, "Change orders", `${p.project_id} has ${p.pending_co_count} unapproved change orders worth ${money(p.pending_co_revenue)} (${pct(p.pending_pct_of_contract, 0)} of contract); oldest is ${p.oldest_pending_age_days} days old.`, p.business_unit, "projects", p.project_id));
+  A.filter(p => Math.abs(p.over_under_pct_of_contract) >= 0.05).forEach(p => add(2, "Billing", `${p.project_id} is ${p.over_under_billing > 0 ? "over-billed" : "under-billed"} by ${money(Math.abs(p.over_under_billing))}.`, p.business_unit, "projects", p.project_id));
+  A.filter(p => p.safety_cluster).forEach(p => add(1, "Safety", `${p.project_id} has ${p.peak_incidents_in_window} incidents inside 90 days (from ${dstr(p.peak_window_start)}).`, p.business_unit, "field", p.project_id));
+  const worst = vendorStats(S).filter(v => v.rate < 0.5)[0];
+  if (worst) add(2, "Suppliers", `${worst.name} delivered on time on only ${pct(worst.rate, 0)} of ${worst.delivered} lines (about ${worst.avgLate.toFixed(0)} days late on average); ${plural(worst.overdue, "open line")} overdue.`, "All units", "proc");
+  const vp = {};
+  S.po_lines.filter(r => r.status === "Received").forEach(r => { const x = vp[r.project_id + "|" + r.vendor_name] ||= { pid: r.project_id, v: r.vendor_name, n: 0, late: 0 }; x.n++; x.late += r.days_late_delivered; });
+  const chronic = new Set(vendorStats(S).filter(v => v.rate < 0.5).map(v => v.name));
+  Object.values(vp).filter(x => x.n >= 4 && x.late / x.n >= 15 && !chronic.has(x.v)).forEach(x => { const p = A.find(q => q.project_id === x.pid); if (p) add(2, "Suppliers", `${x.v} deliveries to ${x.pid} average ${(x.late / x.n).toFixed(0)} days late across ${x.n} lines.`, p.business_unit, "proc", x.pid); });
+  A.filter(p => p.ar_overdue > 500000).sort((a, b) => b.ar_overdue - a.ar_overdue).forEach(p => add(2, "Receivables", `${p.project_id} owner owes ${money(p.ar_overdue)} past due${p.ar_over_90 > 0 ? ` (${money(p.ar_over_90)} over 90 days)` : ""}.`, p.business_unit, "cash", p.project_id));
+  A.filter(p => p.schedule_status === "Late").forEach(p => add(2, "Schedule", `${p.project_id} final milestone is forecast ${p.final_slip_days} days late.`, p.business_unit, "field", p.project_id));
+  A.filter(p => p.rfis_overdue >= 3).forEach(p => add(3, "RFIs", `${p.project_id} has ${p.rfis_overdue} RFIs past their response date.`, p.business_unit, "field", p.project_id));
+  S.subcontracts.filter(r => r.disputed_amount > 0).reduce((m, r) => { (m[r.project_id + "|" + r.vendor_name] ||= { r, a: 0 }).a += r.disputed_amount; return m; }, {}) &&
+    Object.values(S.subcontracts.filter(r => r.disputed_amount > 0).reduce((m, r) => { (m[r.project_id + "|" + r.vendor_name] ||= { r, a: 0 }).a += r.disputed_amount; return m; }, {})).forEach(x => add(3, "Subcontracts", `${x.r.vendor_name} pay applications on ${x.r.project_id} are in dispute (${money(x.a)}).`, "", "cash", x.r.project_id));
+  if (K.belowReorder.length) add(3, "Inventory", `${K.belowReorder.map(r => r.item_name).join(", ")} ${K.belowReorder.length === 1 ? "is" : "are"} below reorder point.`, "Manufacturing", "proc");
+  if (K.rniCount) add(3, "Payables", `${K.rniCount} deliveries older than 30 days have no vendor invoice (${money(K.rniAmt)} unrecorded).`, "", "proc");
+  return out.sort((a, b) => a.sev - b.sev);
+}
+const flagRows = (items, a, b) => items.slice(a, b).map((i, n) => `<div class="flag"><div>${tag(i.area, i.sev === 1 ? "bad" : i.sev === 2 ? "warn" : "info")}</div><div>${esc(i.text)}${i.where ? ` <span class="where">${esc(i.where)}</span>` : ""}</div><div><button class="btn" type="button" data-flag="${a + n}">Open</button></div></div>`).join("");
+PAGES.exec = () => {
+  const A = S.active;
+  if (!A.length) return `<h2 class="page">Executive</h2><div class="empty">No active projects in this view.</div>`;
+  const fadeTitle = A.length >= 4 && K.top3Share != null ? `${K.fadeTop.length} jobs account for ${pct(K.top3Share, 0)} of margin fade (${K.fadeTop.map(x => x.id).join(", ")})` : `Margin versus bid by job`;
+  const ou = A.slice().sort((a, b) => b.over_under_billing - a.over_under_billing), hi = ou[0], lo = ou[ou.length - 1];
+  const ouTitle = A.length > 1 && hi.over_under_billing > 0 && lo.over_under_billing < 0 ? `${hi.project_id} is billed ${money(hi.over_under_billing)} ahead of earned revenue; ${lo.project_id} is ${money(-lo.over_under_billing)} behind` : "Billing against earned revenue";
+  const items = attention();
+  const kp = [
+    kpi("Active jobs", num(K.active), `${money(K.contract)} contract value`),
+    kpi("Projected margin", pct(K.margin), `bid was ${pct(K.bidMargin)} (${pts((K.margin - K.bidMargin) * 100)})`, K.margin - K.bidMargin < -0.01 ? "warn" : "good"),
+    kpi("Backlog", money(K.backlog), S.pipelineOn ? `pipeline coverage ${K.coverage == null ? "n/a" : K.coverage.toFixed(2) + "x"}` : "contracted work left to do"),
+    kpi("Unapproved change orders", money(K.pendingCo), plural(K.pendingCount, "change order") + " pending", K.pendingCo > 3e6 ? "warn" : ""),
+    kpi("Overdue receivables", money(K.arOverdue), `${money(K.ar90)} over 90 days`, K.ar90 > 1e6 ? "bad" : "warn"),
+    kpi("Late or at-risk jobs", num(K.late + K.atRisk), `${K.late} late, ${K.atRisk} at risk`, K.late ? "warn" : "good"),
+  ];
+  if (S.safety) kp.push(kpi("Injury rate (TRIR, 12 months)", K.trir12 == null ? "n/a" : K.trir12.toFixed(1), `${plural(K.recordables12, "recordable")} in 12 months`, K.trir12 > 5 ? "warn" : ""));
+  if (S.pipelineOn) kp.push(kpi("Weighted pipeline", money(K.weighted), `win rate ${pct(K.winRate, 0)} of closed bids`));
+  return `<h2 class="page">Executive portfolio</h2>
+  <p class="lede">Where should leadership look first? Everything below is as of ${dstr(D.meta.as_of)} and covers ${esc(S.role.t === "exec" ? "all projects" : S.role.t === "fin" ? "all projects (safety hidden)" : S.role.t === "bu" ? S.role.v + " projects" : S.role.v + "'s projects")}.</p>
+  <div class="grid kpis">${kp.join("")}</div>
+  ${card(`Needs attention (${items.length})`, items.length ? flagRows(items, 0, 6) + (items.length > 6 ? `<details class="more"><summary>Show the other ${items.length - 6} findings</summary>${flagRows(items, 6, items.length)}</details>` : "") : `<div class="empty">No flagged items in this view.</div>`, { note: "Generated from the metric views: one line per finding, ordered by severity." })}
+  <div style="height:12px"></div>
+  <div class="grid two">
+    ${card(fadeTitle, chartBox("c_fade", "Bar chart of margin fade in percentage points by active job"), { note: "Margin fade = bid margin minus projected margin, in percentage points. Higher is worse.", sql: ["v_project_margin", "v_project_cost_progress"] })}
+    ${card(ouTitle, chartBox("c_ou", "Bar chart of over and under billing in dollars by active job"), { note: "Billed to date minus earned revenue. Above zero: cash collected ahead of work. Below zero: we are financing the owner.", sql: ["v_project_wip"] })}
+  </div>
+  ${card("All projects", table([
+    { h: "Job", f: r => `<strong>${esc(r.project_id)}</strong> ${esc(r.project_name)}` }, { h: "Unit", k: "business_unit" }, { h: "Status", f: r => tag(r.status, r.status === "Active" ? "info" : "good") },
+    { h: "Complete", num: 1, f: r => pct(r.pct_complete, 0) }, { h: "Contract", num: 1, f: r => money(r.revised_contract_value) },
+    { h: "Proj. margin", num: 1, f: r => pct(r.projected_margin_pct) }, { h: "Margin vs bid", num: 1, f: r => r.status === "Active" ? tag(pts(-r.margin_fade_pts), fadeTone(r.margin_fade_pts)) : "" },
+    { h: "Over/(under) billed", num: 1, f: r => r.status === "Active" ? money(r.over_under_billing) : "" }, { h: "Pending COs", num: 1, f: r => money(r.pending_co_revenue) },
+    { h: "Schedule", f: r => r.status === "Active" ? schedTag(r.schedule_status) : "" }
+  ], S.projects, { click: true }), { note: "Select a row to open that job.", sql: ["v_project_summary"] })}`;
+};
+AFTER.exec = () => {
+  const A = S.active.slice().sort((a, b) => b.margin_fade_pts - a.margin_fade_pts);
+  draw("c_fade", { type: "bar", data: { labels: A.map(p => p.project_id), datasets: [{ label: "Margin fade (pts)", data: A.map(p => +p.margin_fade_pts.toFixed(2)), backgroundColor: A.map(p => p.margin_fade_pts >= 5 ? C(5) : p.margin_fade_pts >= 2 ? C(2) : C(1)) }] },
+    options: { indexAxis: "y", plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.x.toFixed(1)} pts of margin lost versus bid` } } }, scales: { x: { title: { display: true, text: "Percentage points below bid margin" } } }, onClick: (e, el) => el[0] && go("projects", A[el[0].index].project_id) } });
+  const B = S.active.slice().sort((a, b) => b.over_under_billing - a.over_under_billing);
+  draw("c_ou", { type: "bar", data: { labels: B.map(p => p.project_id), datasets: [{ label: "Over/(under) billed", data: B.map(p => Math.round(p.over_under_billing)), backgroundColor: B.map(p => p.over_under_billing >= 0 ? C(2) : C(3)) }] },
+    options: { plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => " " + money(c.parsed.y, 2) + (c.parsed.y >= 0 ? " over-billed" : " under-billed") } } }, scales: { y: { ticks: { callback: mt } } }, onClick: (e, el) => el[0] && go("projects", B[el[0].index].project_id) } });
+  const items = attention();
+  document.querySelectorAll("[data-flag]").forEach(b => b.onclick = () => { const i = items[+b.dataset.flag]; go(i.page, i.proj); });
+};
+CLICK.exec = i => go("projects", S.projects[i].project_id);
+
+/* ============================== PAGE 2: Project drill-down ============================== */
+PAGES.projects = () => {
+  if (!S.projects.length) return `<h2 class="page">Project drill-down</h2><div class="empty">No projects in this view.</div>`;
+  const p = S.projects.find(x => x.project_id === state.project);
+  const opts = S.projects.map(x => `<option value="${x.project_id}" ${x.project_id === p.project_id ? "selected" : ""}>${x.project_id} ${esc(x.project_name)}</option>`).join("");
+  const cbc = S.cost_by_code.filter(r => r.project_id === p.project_id).sort((a, b) => b.forecast_variance - a.forecast_variance);
+  const cos = S.change_orders.filter(r => r.project_id === p.project_id);
+  const ms = S.milestones.filter(r => r.project_id === p.project_id);
+  const rfis = S.rfi_open.filter(r => r.project_id === p.project_id);
+  const over = cbc.filter(r => r.forecast_variance > 1000);
+  const costTitle = p.status === "Completed" ? `${p.project_id} finished at ${pct(p.projected_margin_pct)} margin` : p.margin_fade_pts >= 2 ? `${p.project_id} is forecast to finish ${money(p.estimated_cost_at_completion - p.revised_budget_cost)} over budget` : `${p.project_id} is tracking close to budget`;
+  const sched = ms.find(m => !m.actual_date);
+  return `<h2 class="page">Project drill-down</h2>
+  <div class="proj-pick"><label for="pp">Job</label><select id="pp">${opts}</select> ${p.status === "Active" ? schedTag(p.schedule_status) : tag("Completed", "good")}</div>
+  <p class="lede">${esc(p.project_name)}. Owner: ${esc(p.account_name || "n/a")}. Manager: ${esc(p.project_manager || "n/a")}. ${esc(p.business_unit)}. ${dstr(p.start_date)} to ${dstr(p.planned_end_date)} planned.</p>
+  <div class="grid kpis">
+    ${kpi("Percent complete", pct(p.pct_complete, 0), `cost-to-cost; plan was ${pct(p.planned_pct_complete, 0)}`)}
+    ${kpi("Projected margin", pct(p.projected_margin_pct), `bid ${pct(p.bid_margin_pct)} (${pts(-p.margin_fade_pts)})`, fadeTone(p.margin_fade_pts))}
+    ${kpi("Estimated cost at completion", money(p.estimated_cost_at_completion), `budget ${money(p.revised_budget_cost)}`)}
+    ${kpi("Billing position", money(p.over_under_billing), p.billing_position, Math.abs(p.over_under_pct_of_contract) > 0.05 ? "warn" : "")}
+    ${kpi("Unapproved change orders", money(p.pending_co_revenue), `${plural(p.pending_co_count, "change order")}, oldest ${p.oldest_pending_age_days ?? 0} days`, p.pending_pct_of_contract > 0.1 ? "warn" : "")}
+    ${kpi("Open RFIs", num(p.rfis_open), `${p.rfis_overdue} overdue`, p.rfis_overdue ? "warn" : "")}
+    ${kpi("Overdue POs", num(p.po_overdue_lines), money(p.po_overdue_amount), p.po_overdue_lines ? "warn" : "")}
+    ${kpi("Next milestone", `<span style="font-size:16px;line-height:1.3;display:block">${esc(p.next_milestone || "none")}</span>`, p.next_forecast_date ? "forecast " + dstr(p.next_forecast_date) : "")}
+  </div>
+  <div class="grid two">
+    ${card(costTitle, chartBox("c_cost", "Line chart of cumulative budget, actual and forecast cost by month"), { note: "Plan is an assumed S-curve over the planned duration (the ERP export has no baseline schedule). Forecast = actuals, then cost to complete spread over the remaining months.", sql: ["v_project_cost_curve"] })}
+    ${card(p.over_under_billing > 0 ? `Billed ${money(p.over_under_billing)} ahead of earned revenue` : `Earned revenue is ${money(-p.over_under_billing)} ahead of billing`, chartBox("c_bill", "Line chart of cumulative cost, billed and earned revenue by month"), { note: "Earlier months are restated at the current cost forecast, so this shows direction, not past WIP reports.", sql: ["v_project_billing_curve", "v_project_wip"] })}
+  </div>
+  ${card(over.length ? `${over.length} cost ${over.length === 1 ? "code is" : "codes are"} forecast over budget` : "No cost codes are forecast over budget", table([
+    { h: "Code", f: r => `${esc(r.cost_code)} ${esc(r.cost_code_name)}` }, { h: "Category", k: "category" }, { h: "Revised budget", num: 1, f: r => money(r.revised_budget) },
+    { h: "Actual to date", num: 1, f: r => money(r.actual_cost) }, { h: "Cost to complete", num: 1, f: r => money(r.estimate_to_complete) },
+    { h: "Forecast vs budget", num: 1, f: r => r.forecast_variance > 1000 ? tag("+" + money(r.forecast_variance), "bad") : r.forecast_variance < -1000 ? tag(money(r.forecast_variance), "good") : money(r.forecast_variance) }
+  ], cbc.slice(0, 10)), { note: "Largest forecast overruns first. Forecast = actual plus the project manager's estimate to complete.", sql: ["v_project_cost_by_code"] })}
+  <div style="height:12px"></div>
+  <div class="grid two">
+    ${card(`Change orders (${cos.length})`, table([
+      { h: "No.", k: "co_number" }, { h: "Description", f: r => esc(r.description) }, { h: "Status", f: r => tag(r.status, r.status === "Pending" ? "warn" : r.status === "Approved" ? "good" : "info") },
+      { h: "Amount", num: 1, f: r => money(r.amount) }, { h: "Age (days)", num: 1, f: r => r.status === "Pending" ? r.age_days : "" }
+    ], cos.slice().sort((a, b) => (b.status === "Pending") - (a.status === "Pending") || b.age_days - a.age_days).slice(0, 10), { empty: "No change orders." }), { note: "Pending first, oldest first. Only the first 10 are shown.", sql: ["v_change_order_detail", "v_change_order_exposure"] })}
+    ${card(`Schedule milestones (${ms.length})`, table([
+      { h: "Milestone", k: "milestone_name" }, { h: "Planned", f: r => dstr(r.planned_date) }, { h: "Forecast / actual", f: r => dstr(r.actual_date || r.forecast_date) },
+      { h: "Slip", num: 1, f: r => r.slip_days > 30 ? tag(r.slip_days + " d", "bad") : r.slip_days > 7 ? tag(r.slip_days + " d", "warn") : r.slip_days + " d" }, { h: "Status", k: "status" }
+    ], ms), { note: sched ? `Schedule variance ${pts(p.schedule_variance_pts)} (spend versus plan). Final milestone forecast ${p.final_slip_days} days from plan.` : "", sql: ["v_milestone_detail", "v_schedule_by_project", "v_project_schedule_variance"] })}
+  </div>
+  ${rfis.length ? card(`Open RFIs (${rfis.length})`, table([
+    { h: "RFI", f: r => "#" + r.rfi_number }, { h: "Subject", k: "subject" }, { h: "Discipline", k: "discipline" }, { h: "Waiting on", k: "ball_in_court" },
+    { h: "Submitted", f: r => dstr(r.submitted_date) }, { h: "Days past due", num: 1, f: r => r.days_past_due > 0 ? tag(r.days_past_due, r.days_past_due > 60 ? "bad" : "warn") : "not yet" }
+  ], rfis), { sql: ["v_rfi_open_detail"] }) : ""}`;
+};
+AFTER.projects = () => {
+  $("#pp").onchange = e => { state.project = e.target.value; render(); };
+  const pid = state.project, cc = S.cost_curve.filter(r => r.project_id === pid), bc = S.billing_curve.filter(r => r.project_id === pid);
+  const asof = D.meta.as_of;
+  draw("c_cost", { type: "line", data: { labels: cc.map(r => mlabel(r.month_end)), datasets: [
+    { label: "Plan (assumed S-curve)", data: cc.map(r => r.budget_cum), borderColor: C(7), borderDash: [6, 4], pointRadius: 0, borderWidth: 2 },
+    { label: "Actual", data: cc.map(r => r.month_end <= asof ? r.actual_cum : null), borderColor: C(1), pointRadius: 0, borderWidth: 3 },
+    { label: "Forecast", data: cc.map(r => r.forecast_cum), borderColor: C(5), borderDash: [2, 3], pointRadius: 0, borderWidth: 2 }] },
+    options: { interaction: { mode: "index", intersect: false }, plugins: { tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${money(c.parsed.y, 2)}` } } }, scales: { y: { ticks: { callback: mt } }, x: { ticks: { maxTicksLimit: 8 } } } } });
+  draw("c_bill", { type: "line", data: { labels: bc.map(r => mlabel(r.month_end)), datasets: [
+    { label: "Cost to date", data: bc.map(r => r.cost_cum), borderColor: C(7), borderDash: [6, 4], pointRadius: 0, borderWidth: 2 },
+    { label: "Earned revenue", data: bc.map(r => r.earned_cum), borderColor: C(1), pointRadius: 0, borderWidth: 3 },
+    { label: "Billed", data: bc.map(r => r.billed_cum), borderColor: C(2), pointRadius: 0, borderWidth: 3 }] },
+    options: { interaction: { mode: "index", intersect: false }, plugins: { tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${money(c.parsed.y, 2)}` } } }, scales: { y: { ticks: { callback: mt } }, x: { ticks: { maxTicksLimit: 8 } } } } });
+};
+
+/* ============================== PAGE 3: Procurement ============================== */
+PAGES.proc = () => {
+  const vs = vendorStats(S), worst = vs[0];
+  const vTitle = worst && worst.rate < 0.5 ? `${worst.name} delivers on time only ${pct(worst.rate, 0)} of the time` : vs.length ? `On-time delivery ranges from ${pct(vs[0].rate, 0)} to ${pct(vs[vs.length - 1].rate, 0)} by supplier` : "Delivery performance by supplier";
+  const over = S.po_lines.filter(r => r.is_overdue_open).sort((a, b) => b.days_overdue - a.days_overdue);
+  const ll = S.long_lead.slice().sort((a, b) => (a.risk === "Overdue" ? 0 : 1) - (b.risk === "Overdue" ? 0 : 1) || a.promised_date.localeCompare(b.promised_date));
+  const kp = [
+    kpi("Open orders", money(K.openPoValue), plural(K.openPoLines, "line") + " not fully delivered"),
+    kpi("Overdue orders", num(K.overduePoLines), money(K.overduePoAmt) + " past promised date", K.overduePoLines ? "warn" : "good"),
+    kpi("On-time delivery", pct(K.onTime, 0), "of fully delivered lines", K.onTime < 0.8 ? "warn" : "good"),
+    kpi("Long-lead items overdue", num(K.longLeadOverdue), plural(S.long_lead.length, "long-lead line") + " open", K.longLeadOverdue ? "bad" : "good"),
+    kpi("Received, not invoiced", money(K.rniAmt), plural(K.rniCount, "delivery", "deliveries") + " older than 30 days", K.rniCount ? "warn" : ""),
+    kpi("Invoiced, not received", money(K.inrAmt), plural(K.inrCount, "invoice"), K.inrCount ? "warn" : ""),
+    kpi("Price exceptions", num(K.priceExc), "invoices more than 5% above value received", K.priceExc ? "warn" : "")
+  ];
+  if (S.inventoryOn) kp.push(kpi("Plant items below reorder", num(K.belowReorder.length), K.belowReorder.length ? K.belowReorder.map(r => r.item_name).join(", ") : "all stocked", K.belowReorder.length ? "bad" : "good"));
+  const byProj = S.projects.filter(p => p.open_order_value > 0);
+  return `<h2 class="page">Procurement and materials</h2>
+  <p class="lede">What have we ordered, is it shipped and delivered, what does it cost, and what does not match? Cost is ordered value from the purchase order; delivery dates come from receipts.</p>
+  <div class="grid kpis">${kp.join("")}</div>
+  <div class="grid two">
+    ${card(vTitle, vs.length ? chartBox("c_vendor", "Bar chart of on-time delivery rate by supplier") : `<div class="empty">Not enough delivered lines in this view.</div>`, { note: "Share of fully delivered lines received on or before the promised date. Suppliers with at least 5 deliveries.", sql: ["v_vendor_scorecard", "v_po_line_status"] })}
+    ${card(`${money(K.openPoValue)} is on order; ${money(K.overduePoAmt)} of it is overdue`, byProj.length ? chartBox("c_open", "Stacked bar chart of open order value by job, split into overdue and not yet due") : `<div class="empty">No open orders in this view.</div>`, { note: "Open order value by job. Overdue = promised date has passed and the line is not fully received.", sql: ["v_project_procurement"] })}
+  </div>
+  ${card(`Overdue open orders (${over.length})`, table([
+    { h: "Job", k: "project_id" }, { h: "PO", k: "po_number" }, { h: "Supplier", k: "vendor_name" }, { h: "Item", k: "item_description" },
+    { h: "Status", k: "status" }, { h: "Promised", f: r => dstr(r.promised_date) }, { h: "Days overdue", num: 1, f: r => tag(r.days_overdue, r.days_overdue > 14 ? "bad" : "warn") },
+    { h: "Value", num: 1, f: r => money(r.ordered_amount) }, { h: "Long lead", f: r => r.is_long_lead ? tag("Yes", "warn") : "" }
+  ], over, { empty: "No overdue open orders." }), { sql: ["v_po_line_status"] })}
+  <div style="height:12px"></div>
+  <div class="grid two">
+    ${card(`Long-lead watch list (${ll.length})`, table([
+      { h: "Job", k: "project_id" }, { h: "Supplier", k: "vendor_name" }, { h: "Item", k: "item_description" }, { h: "Promised", f: r => dstr(r.promised_date) },
+      { h: "Value", num: 1, f: r => money(r.ordered_amount) }, { h: "Risk", f: r => tag(r.risk, r.risk === "Overdue" ? "bad" : r.risk === "On order" ? "info" : "warn") }
+    ], ll.slice(0, 12), { empty: "No open long-lead items." }), { note: "Items with a typical lead time of 60 days or more that have not arrived.", sql: ["v_long_lead_watch"] })}
+    ${card(`Three-way match exceptions (${S.three_way.length})`, table([
+      { h: "Exception", f: r => tag(r.exception_type, r.exception_type.startsWith("Invoice above") ? "warn" : "bad") }, { h: "Job", k: "project_id" }, { h: "Supplier", k: "vendor_name" },
+      { h: "Item", k: "item_description" }, { h: "Amount", num: 1, f: r => money(r.exception_amount) }
+    ], S.three_way.slice(0, 12), { empty: "No exceptions." }), { note: "Where what was ordered, received and invoiced disagree. Largest first; first 12 shown.", sql: ["v_three_way_match_exceptions"] })}
+  </div>
+  ${S.inventoryOn ? card(K.belowReorder.length ? `${K.belowReorder.length} plant ${K.belowReorder.length === 1 ? "item is" : "items are"} below reorder point and will run out before a new order arrives` : "Plant inventory is above reorder points", table([
+    { h: "Item", k: "item_name" }, { h: "On hand", num: 1, f: r => num(r.on_hand_qty, 0) + " " + esc(r.uom) }, { h: "Reorder point", num: 1, f: r => num(r.reorder_point, 0) },
+    { h: "Days of cover", num: 1, f: r => r.days_of_cover }, { h: "Supplier lead time", num: 1, f: r => r.lead_time_days + " d" },
+    { h: "Status", f: r => tag(r.reorder_status, r.reorder_status === "OK" ? "good" : r.reorder_status === "Low" ? "warn" : "bad") },
+    { h: "Suggested order", num: 1, f: r => r.suggested_order_value ? money(r.suggested_order_value) : "" }
+  ], S.inventory), { note: "Manufacturing stock. Stock-out risk = days of cover is shorter than the supplier lead time.", sql: ["v_inventory_status"] }) : ""}`;
+};
+AFTER.proc = () => {
+  const vs = vendorStats(S);
+  if (vs.length) draw("c_vendor", { type: "bar", data: { labels: vs.map(v => v.name), datasets: [{ label: "On-time rate", data: vs.map(v => +(v.rate * 100).toFixed(1)), backgroundColor: vs.map(v => v.rate < 0.6 ? C(5) : C(1)) }] },
+    options: { indexAxis: "y", plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.x}% on time (${vs[c.dataIndex].delivered} deliveries, ${vs[c.dataIndex].avgLate.toFixed(1)} days late on average)` } } }, scales: { x: { min: 0, max: 100, title: { display: true, text: "% of deliveries on or before promised date" } } } } });
+  const bp = S.projects.filter(p => p.open_order_value > 0);
+  if (bp.length) draw("c_open", { type: "bar", data: { labels: bp.map(p => p.project_id), datasets: [
+    { label: "Overdue", data: bp.map(p => Math.round(p.po_overdue_amount)), backgroundColor: C(5), stack: "s" },
+    { label: "Not yet due", data: bp.map(p => Math.round(p.open_order_value - p.po_overdue_amount)), backgroundColor: C(3), stack: "s" }] },
+    options: { plugins: { tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${money(c.parsed.y, 2)}` } } }, scales: { x: { stacked: true }, y: { stacked: true, ticks: { callback: mt } } } } });
+};
+
+/* ============================== PAGE 4: Subcontracts and cash ============================== */
+const BUCKETS = ["1 Current", "2 1-30", "3 31-60", "4 61-90", "5 90+"], BL = ["Not yet due", "1-30 days", "31-60 days", "61-90 days", "Over 90 days"];
+const aging = rows => BUCKETS.map(b => sum(rows.filter(r => r.aging_bucket === b), r => r.amount_open));
+PAGES.cash = () => {
+  const ar = aging(S.ar_open), ap = aging(S.ap_open);
+  const subs = S.subcontracts.slice().sort((a, b) => b.disputed_amount - a.disputed_amount || b.net_payable - a.net_payable);
+  const arLate = S.ar_open.filter(r => r.days_past_due > 0).sort((a, b) => b.amount_open - a.amount_open);
+  const ob = S.commit_vs_budget.filter(r => r.is_over_committed).sort((a, b) => b.committed_over_budget - a.committed_over_budget);
+  return `<h2 class="page">Subcontracts and cash</h2>
+  <p class="lede">Who owes us, who we owe, how old it is, and how much retainage is held each way. Owner amounts are net of retainage; retainage is shown separately.</p>
+  <div class="grid kpis">
+    ${kpi("Receivables open", money(K.arOpen), `${money(K.arOverdue)} past due`, K.arOverdue ? "warn" : "")}
+    ${kpi("Receivables over 90 days", money(K.ar90), "owner billings", K.ar90 ? "bad" : "good")}
+    ${kpi("Payables open", money(K.apOpen), `${money(K.apOverdue)} past due`, K.apOverdue ? "warn" : "")}
+    ${kpi("Payables on hold", money(K.apHeld), "invoices or pay applications held or disputed", K.apHeld ? "warn" : "")}
+    ${kpi("Retainage owed to us", money(K.retRecv), "held by owners on active jobs")}
+    ${kpi("Retainage we hold", money(K.retPay), "withheld from subcontractors")}
+    ${kpi("Subcontracts committed", money(K.subCommitted), `${money(K.subBilled)} billed (${pct(K.subCommitted ? K.subBilled / K.subCommitted : null, 0)})`)}
+    ${kpi("Disputed pay applications", money(K.subDisputed), "subcontractor billings in dispute", K.subDisputed ? "warn" : "good")}
+  </div>
+  <div class="grid two">
+    ${card(`${money(K.arOverdue)} of owner receivables is past due`, chartBox("c_ar", "Bar chart of open owner receivables by age bucket"), { note: "Open billings by days past the due date.", sql: ["v_ar_open_items", "v_aging_summary"] })}
+    ${card(`${money(K.apOverdue)} of payables is past due`, chartBox("c_ap", "Bar chart of open payables by age bucket"), { note: "Vendor invoices plus subcontractor pay applications, by days past the due date. Items dated after the as-of date are excluded.", sql: ["v_ap_open_items", "v_aging_summary"] })}
+  </div>
+  ${card(`Largest overdue owner billings (${arLate.length} past due)`, table([
+    { h: "Job", k: "project_id" }, { h: "Owner", k: "account_name" }, { h: "Invoice", k: "invoice_no" }, { h: "Due", f: r => dstr(r.due_date) },
+    { h: "Days past due", num: 1, f: r => tag(r.days_past_due, r.days_past_due > 90 ? "bad" : "warn") }, { h: "Status", k: "status" }, { h: "Open (net)", num: 1, f: r => money(r.amount_open) }
+  ], arLate.slice(0, 10), { empty: "No overdue receivables." }), { sql: ["v_ar_open_items"] })}
+  <div style="height:12px"></div>
+  ${card(`Subcontract position (${subs.length})`, table([
+    { h: "Job", k: "project_id" }, { h: "Subcontractor", k: "vendor_name" }, { h: "Trade", k: "cost_code_name" }, { h: "Committed", num: 1, f: r => money(r.committed_total) },
+    { h: "Billed", num: 1, f: r => money(r.billed_to_date) }, { h: "% billed", num: 1, f: r => pct(r.pct_billed, 0) }, { h: "Paid", num: 1, f: r => money(r.paid_to_date) },
+    { h: "Retainage held", num: 1, f: r => money(r.retainage_held - r.retainage_released) }, { h: "Net payable", num: 1, f: r => money(r.net_payable) },
+    { h: "Flags", f: r => (r.disputed_amount > 0 ? tag("Disputed " + money(r.disputed_amount), "bad") + " " : "") + (r.is_overbilled ? tag("Billed over commitment", "warn") : "") }
+  ], subs.slice(0, 15)), { note: "Disputed first, then largest net payable. First 15 shown.", sql: ["v_subcontract_position"] })}
+  <div style="height:12px"></div>
+  ${card(ob.length ? `${ob.length} cost ${ob.length === 1 ? "line has" : "lines have"} commitments more than 5% over budget` : "No cost line is committed more than 5% over budget", table([
+    { h: "Job", k: "project_id" }, { h: "Cost code", f: r => esc(r.cost_code + " " + r.cost_code_name) }, { h: "Revised budget", num: 1, f: r => money(r.revised_budget) },
+    { h: "Committed", num: 1, f: r => money(r.committed_total) }, { h: "Over by", num: 1, f: r => tag(money(r.committed_over_budget), "warn") }
+  ], ob.slice(0, 10), { empty: "Nothing over-committed." }), { note: "Commitments (subcontracts and purchase orders) more than 5% above the line's revised budget.", sql: ["v_commitment_vs_budget"] })}`;
+};
+AFTER.cash = () => {
+  const bar = (id, vals, color) => draw(id, { type: "bar", data: { labels: BL, datasets: [{ label: "Open amount", data: vals.map(Math.round), backgroundColor: vals.map((v, i) => i === 0 ? C(3) : i < 3 ? C(2) : C(5)) }] },
+    options: { plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => " " + money(c.parsed.y, 2) } } }, scales: { y: { ticks: { callback: mt } } } } });
+  bar("c_ar", aging(S.ar_open)); bar("c_ap", aging(S.ap_open));
+};
+
+/* ============================== PAGE 5: Field operations ============================== */
+PAGES.field = () => {
+  const A = S.active, late = A.filter(p => p.schedule_status === "Late");
+  const eqU = equipByUnit();
+  const rfis = S.rfi_open.filter(r => r.days_past_due > 0).slice(0, 10);
+  const sbp = S.safety_by_project, sd = S.safety_detail;
+  const cluster = A.filter(p => p.safety_cluster);
+  const slipTitle = late.length ? `${late.length} ${late.length === 1 ? "job is" : "jobs are"} forecast more than 30 days late` : "No job is forecast more than 30 days late";
+  const kp = [
+    kpi("Equipment utilization", pct(K.util, 0), "days worked / 22 working days", K.util < 0.7 ? "warn" : ""),
+    kpi("Idle rented equipment", money(K.idle), "standby days on rented units", K.idle > 5e5 ? "warn" : ""),
+    kpi("Open RFIs", num(K.rfiOpen), `${K.rfiOverdue} past response date`, K.rfiOverdue ? "warn" : "good"),
+    kpi("Late submittals", num(K.subLate), "pending past required-by date", K.subLate ? "warn" : "good"),
+    kpi("Late or at-risk jobs", num(K.late + K.atRisk), `${K.late} late, ${K.atRisk} at risk`, K.late ? "warn" : "good")
+  ];
+  if (S.safety) kp.push(kpi("Injury rate (TRIR, 12 months)", K.trir12 == null ? "n/a" : K.trir12.toFixed(1), `${plural(K.recordables12, "recordable")}`, K.trir12 > 5 ? "warn" : ""));
+  const safetyHtml = !S.safety ? `<section class="card" style="margin-top:12px"><h3>Safety</h3><div class="empty">Safety incident data is not available to the Finance role (see the access matrix).</div></section>` : `
+  <h2 class="page" style="margin-top:20px">Safety</h2>
+  <div class="grid two">
+    ${card(cluster.length ? `${cluster.map(p => p.project_id).join(", ")} ${cluster.length === 1 ? "has" : "have"} an incident cluster: ${cluster[0].peak_incidents_in_window} incidents in 90 days` : "No job has an incident cluster", chartBox("c_inc", "Stacked bar chart of safety incidents per quarter by type"), { note: "All incidents by quarter. A cluster is 5 or more incidents on one job inside any 90-day window.", sql: ["v_safety_detail", "v_safety_by_project"] })}
+    ${card("Injury rate by job (last 12 months)", chartBox("c_trir", "Bar chart of recordable incident rate by job over the last 12 months"), { note: "TRIR = recordables x 200,000 / hours worked. Small hour bases make rates volatile, so counts are in the tooltip.", sql: ["v_safety_by_project"] })}
+  </div>
+  ${card("Recent incidents", table([
+    { h: "Date", f: r => dstr(r.incident_date) }, { h: "Job", k: "project_id" }, { h: "Type", f: r => tag(r.incident_type, r.incident_type === "Lost Time" ? "bad" : r.incident_type === "Recordable" ? "warn" : "info") },
+    { h: "Cause", k: "cause_category" }, { h: "Severity", num: 1, k: "severity" }, { h: "Days away", num: 1, k: "days_away" }
+  ], sd.slice().sort((a, b) => b.incident_date.localeCompare(a.incident_date)).slice(0, 10), { empty: "No incidents." }), { note: "Latest 10.", sql: ["v_safety_detail"] })}`;
+  return `<h2 class="page">Field operations</h2>
+  <p class="lede">Equipment, requests for information, submittals, schedule and safety on active work.</p>
+  <div class="grid kpis">${kp.join("")}</div>
+  <div class="grid two">
+    ${card(slipTitle, chartBox("c_slip", "Bar chart of days the final milestone is forecast to slip by job"), { note: "Final milestone forecast date minus planned date. Late > 30 days, at risk > 7 days.", sql: ["v_schedule_by_project"] })}
+    ${card(`Equipment: ${pct(K.util, 0)} utilized, ${money(K.idle)} of rented standby cost`, chartBox("c_eq", "Bar chart of utilization by equipment unit", true), { note: "Utilization = days worked / (22 x months on site). Orange = rented units (we pay rent when idle).", sql: ["v_equipment_by_unit", "v_equipment_usage_detail"] })}
+  </div>
+  ${card(`RFIs past their response date (${S.rfi_open.filter(r => r.days_past_due > 0).length})`, table([
+    { h: "Job", k: "project_id" }, { h: "RFI", f: r => "#" + r.rfi_number }, { h: "Subject", k: "subject" }, { h: "Waiting on", k: "ball_in_court" },
+    { h: "Days past due", num: 1, f: r => tag(r.days_past_due, r.days_past_due > 60 ? "bad" : "warn") }, { h: "Cost impact", f: r => r.has_cost_impact ? tag("Yes", "warn") : "" }
+  ], rfis, { empty: "No overdue RFIs." }), { note: "Oldest first; first 10 shown.", sql: ["v_rfi_by_project", "v_rfi_open_detail", "v_submittal_by_project"] })}
+  ${safetyHtml}`;
+};
+function equipByUnit() {
+  const m = {};
+  S.equipment.forEach(r => { const u = m[r.equipment_id] ||= { name: r.equipment_name, own: r.ownership, days: 0, um: 0, idle: 0 }; u.days += r.days_used; u.um += r.unit_months; u.idle += r.rented_idle_cost; });
+  return Object.values(m).map(u => ({ ...u, util: u.um ? u.days / (22 * u.um) : 0 })).sort((a, b) => a.util - b.util);
+}
+AFTER.field = () => {
+  const A = S.active.slice().sort((a, b) => b.final_slip_days - a.final_slip_days);
+  draw("c_slip", { type: "bar", data: { labels: A.map(p => p.project_id), datasets: [{ label: "Days late", data: A.map(p => p.final_slip_days), backgroundColor: A.map(p => p.schedule_status === "Late" ? C(5) : p.schedule_status === "At risk" ? C(2) : C(1)) }] },
+    options: { plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.y} days (${A[c.dataIndex].schedule_status})` } } }, scales: { y: { title: { display: true, text: "Days versus plan" } } } } });
+  const eq = equipByUnit();
+  draw("c_eq", { type: "bar", data: { labels: eq.map(u => u.name), datasets: [{ label: "Utilization", data: eq.map(u => +(u.util * 100).toFixed(1)), backgroundColor: eq.map(u => u.own === "Rented" ? C(2) : C(1)) }] },
+    options: { indexAxis: "y", plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.x}% (${eq[c.dataIndex].own}${eq[c.dataIndex].idle ? ", idle cost " + money(eq[c.dataIndex].idle) : ""})` } } }, scales: { x: { min: 0, max: 100, title: { display: true, text: "% of working days" } }, y: { ticks: { font: { size: 11 }, autoSkip: false } } } } });
+  if (S.safety) {
+    const q = d => d.slice(0, 4) + " Q" + (Math.floor((+d.slice(5, 7) - 1) / 3) + 1);
+    const labels = [...new Set(S.safety_detail.map(r => q(r.incident_date)))].sort(), types = ["Near Miss", "First Aid", "Recordable", "Lost Time"], cols = [C(3), C(7), C(2), C(5)];
+    draw("c_inc", { type: "bar", data: { labels, datasets: types.map((t, i) => ({ label: t, data: labels.map(l => S.safety_detail.filter(r => q(r.incident_date) === l && r.incident_type === t).length), backgroundColor: cols[i], stack: "s" })) },
+      options: { scales: { x: { stacked: true }, y: { stacked: true, grace: "10%", ticks: { precision: 0 }, title: { display: true, text: "Incidents" } } } } });
+    const t = S.safety_by_project.filter(r => r.status === "Active").sort((a, b) => b.trir_12m - a.trir_12m);
+    draw("c_trir", { type: "bar", data: { labels: t.map(r => r.project_id), datasets: [{ label: "TRIR (12 months)", data: t.map(r => +(r.trir_12m || 0).toFixed(2)), backgroundColor: t.map(r => r.trir_12m > 5 ? C(5) : C(1)) }] },
+      options: { plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` TRIR ${c.parsed.y.toFixed(1)} (${t[c.dataIndex].recordables_12m} recordables, ${num(t[c.dataIndex].hours_12m)} hours)` } } } } });
+  }
+};
+
+/* ============================== PAGE 6: Pipeline ============================== */
+PAGES.pipeline = () => {
+  const stages = ["Lead", "Qualified", "Proposal", "Negotiation"];
+  const st = stages.map(s => ({ s, n: sum(S.pipeline_by_stage.filter(r => r.stage === s), r => r.opportunity_count), amt: sum(S.pipeline_by_stage.filter(r => r.stage === s), r => r.total_amount), w: sum(S.pipeline_by_stage.filter(r => r.stage === s), r => r.weighted_amount) }));
+  const openAmt = sum(st, x => x.amt);
+  return `<h2 class="page">Pipeline and backlog</h2>
+  <p class="lede">Is there enough work coming to replace what is burning off, and where do we win and lose?</p>
+  <div class="grid kpis">
+    ${kpi("Backlog", money(K.backlog), "active jobs plus awarded, not started")}
+    ${kpi("Weighted pipeline", money(K.weighted), `${money(openAmt)} open at full value`)}
+    ${kpi("Pipeline coverage", K.coverage == null ? "n/a" : K.coverage.toFixed(2) + "x", "weighted pipeline / backlog", K.coverage < 1 ? "warn" : "good")}
+    ${kpi("Win rate", pct(K.winRate, 0), "won / (won + lost), by count")}
+  </div>
+  <div class="grid two">
+    ${card(`${money(K.weighted)} weighted pipeline sits behind ${money(K.backlog)} of backlog`, chartBox("c_stage", "Bar chart of open opportunity value and weighted value by stage"), { note: "Weighted = amount x the CRM's stage probability. Probabilities are generic, not calibrated to history.", sql: ["v_pipeline_by_stage"] })}
+    ${card("Backlog by source", chartBox("c_back", "Stacked bar of backlog by business unit, active jobs and awarded not started"), { note: "Awarded-not-started is won in the CRM but has no project in the ERP yet.", sql: ["v_backlog"] })}
+  </div>
+  ${card("Win rate by business unit", table([
+    { h: "Unit", k: "business_unit" }, { h: "Open deals", num: 1, k: "open_count" }, { h: "Open value", num: 1, f: r => money(r.open_amount) }, { h: "Weighted", num: 1, f: r => money(r.weighted_pipeline) },
+    { h: "Won", num: 1, k: "won_count" }, { h: "Lost", num: 1, k: "lost_count" }, { h: "Win rate (count)", num: 1, f: r => pct(r.win_rate, 0) }, { h: "Win rate (value)", num: 1, f: r => pct(r.win_rate_by_value, 0) }
+  ], S.pipeline_by_bu), { sql: ["v_pipeline_by_bu"] })}`;
+};
+AFTER.pipeline = () => {
+  const stages = ["Lead", "Qualified", "Proposal", "Negotiation"], g = (s, f) => sum(S.pipeline_by_stage.filter(r => r.stage === s), r => r[f]);
+  draw("c_stage", { type: "bar", data: { labels: stages, datasets: [{ label: "Open value", data: stages.map(s => Math.round(g(s, "total_amount"))), backgroundColor: C(3) }, { label: "Weighted value", data: stages.map(s => Math.round(g(s, "weighted_amount"))), backgroundColor: C(1) }] },
+    options: { plugins: { tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${money(c.parsed.y, 1)}` } } }, scales: { y: { ticks: { callback: mt } } } } });
+  const bus = [...new Set(S.backlog.map(r => r.business_unit))].sort();
+  draw("c_back", { type: "bar", data: { labels: bus, datasets: ["Active project", "Awarded, not started"].map((src, i) => ({ label: src, data: bus.map(b => Math.round(sum(S.backlog.filter(r => r.business_unit === b && r.backlog_source === src), r => r.backlog_amount))), backgroundColor: i ? C(2) : C(1), stack: "s" })) },
+    options: { plugins: { tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${money(c.parsed.y, 1)}` } } }, scales: { x: { stacked: true }, y: { stacked: true, ticks: { callback: mt } } } } });
+};
+
+/* ============================== PAGE 7: Data quality and definitions ============================== */
+const DEFS = [
+  ["Percent complete", "Actual cost to date divided by estimated cost at completion (actual + the project manager's estimate to complete). Cost-to-cost method."],
+  ["Margin fade", "Bid margin minus projected margin, in percentage points. Fade dollars = fade x revised contract value."],
+  ["Over / under billing", "Billed to date minus (percent complete x revised contract value). Balanced within 2% of contract."],
+  ["Backlog", "Revised contract value minus earned revenue on active jobs, plus awarded (won) opportunities not yet started. Unsigned pipeline is excluded."],
+  ["Weighted pipeline", "Open opportunity amount x CRM stage probability."],
+  ["TRIR", "Recordable incidents x 200,000 / hours worked (OSHA convention). Shown for the last 12 months and all history."],
+  ["Safety cluster", "5 or more incidents on one job inside any 90-day window."],
+  ["On-time delivery", "Fully received purchase-order lines delivered on or before the promised date."],
+  ["Received, not invoiced", "More receipts than vendor invoices on a PO line, last receipt more than 30 days old."],
+  ["Aging buckets", "Open amount by days past due date: not yet due, 1-30, 31-60, 61-90, over 90."],
+  ["Equipment utilization", "Days worked divided by 22 working days per month on site. Idle cost counts standby days on rented units only."],
+  ["Schedule status", "From the final milestone's forecast slip: Late over 30 days, At risk over 7 days."]
+];
+PAGES.quality = () => {
+  const r = D.dq_results, cnt = s => r.filter(x => x.status === s).length, fails = cnt("FAIL");
+  const info = r.filter(x => x.status === "INFO" || x.status === "WARN" || x.status === "FAIL");
+  const rej = D.reject_reasons;
+  return `<h2 class="page">Data quality and definitions</h2>
+  <p class="lede">Can you trust the numbers on the other pages? Every refresh runs ${r.length} automated checks; a critical failure stops the build and nothing is published.</p>
+  <div class="grid kpis">
+    ${kpi("Last refresh", fails ? "FAILED" : "Passed", "as of " + dstr(D.meta.as_of), fails ? "bad" : "good")}
+    ${kpi("Checks passed", `${cnt("PASS")} / ${r.length}`, "no critical failures", fails ? "bad" : "good")}
+    ${kpi("Source problems found", num(sum(D.staging_audit, x => x.rejected_rows)), "rows quarantined, never counted")}
+    ${kpi("Warnings", num(cnt("WARN")), "non-critical", cnt("WARN") ? "warn" : "good")}
+  </div>
+  <div class="grid two">
+    ${card("Rows received, kept and quarantined", table([
+      { h: "Table", k: "table_name" }, { h: "Raw", num: 1, f: x => num(x.raw_rows) }, { h: "Kept", num: 1, f: x => num(x.staged_rows) }, { h: "Quarantined", num: 1, f: x => x.rejected_rows ? tag(x.rejected_rows, "warn") : "0" }
+    ], D.staging_audit), { note: "Raw = rows delivered by the source system. Quarantined rows are held in a rejects table with the reason and are excluded from every metric.", sql: [] })}
+    ${card("Why rows were quarantined", chartBox("c_rej", "Bar chart of quarantined rows by reason", true), { note: "Reasons are listed by count, all tables combined." })}
+  </div>
+  ${card(`Source problems detected and handled (${info.length} checks with findings)`, table([
+    { h: "Check", f: x => `<strong>${esc(x.check_id)}</strong> ${esc(x.description)}` }, { h: "Layer", k: "layer" }, { h: "Found", num: 1, k: "rows_affected" }, { h: "Result", f: x => tag(x.status, x.status === "INFO" ? "info" : x.status === "WARN" ? "warn" : "bad") }
+  ], info, { empty: "No findings." }), { note: "INFO = a problem in the source that the pipeline is designed to fix or quarantine, or a business exception to follow up. These are expected, and the counts are the evidence." })}
+  <div style="height:12px"></div>
+  ${card("Metric definitions", `<dl style="margin:0;display:grid;grid-template-columns:minmax(120px,max-content) 1fr;gap:6px 14px">${DEFS.map(d => `<dt style="font-weight:600">${esc(d[0])}</dt><dd style="margin:0;color:var(--muted)">${esc(d[1])}</dd>`).join("")}</dl>`, { note: "Full definitions: docs/metric_definitions.md. Each metric is a SQL view; use \"Show the SQL\" on any chart." })}
+  <div style="height:12px"></div>
+  ${card("About this dashboard", `<p style="margin:0">All data is synthetic and generated by a seeded script for a fictional contractor. Problems were planted deliberately (duplicates, orphan keys, wrong formats, impossible dates) so the checks have something real to catch. The role selector is a front-end demonstration; see <code>docs/access_matrix.md</code> for how access would be enforced in Power BI and Snowflake.</p>`)}`;
+};
+AFTER.quality = () => {
+  const m = {}; D.reject_reasons.forEach(x => m[x.reject_reason] = (m[x.reject_reason] || 0) + x.rows);
+  const e = Object.entries(m).sort((a, b) => b[1] - a[1]);
+  draw("c_rej", { type: "bar", data: { labels: e.map(x => x[0].replace(/_/g, " ")), datasets: [{ label: "Rows", data: e.map(x => x[1]), backgroundColor: C(1) }] }, options: { indexAxis: "y", plugins: { legend: { display: false } }, scales: { y: { ticks: { font: { size: 11 }, autoSkip: false } }, x: { ticks: { precision: 0 } } } } });
+};
+
+/* ============================== init ============================== */
+function buildRoleSelect() {
+  const sel = $("#role"), g = (l, o) => `<optgroup label="${l}">${o}</optgroup>`;
+  const leads = D.bu_leads.map(b => `<option value="bu|${esc(b.business_unit)}">${esc(b.full_name)} (${esc(b.business_unit)})</option>`).join("");
+  const pms = D.people.map(p => `<option value="pm|${esc(p.project_manager)}">${esc(p.project_manager)} (${esc(p.business_unit)})</option>`).join("");
+  sel.innerHTML = `<option value="exec">Executive</option><option value="fin">Finance</option>` + g("Business Unit Lead", leads) + g("Project Manager", pms);
+  sel.onchange = () => { state.role = sel.value; state.project = null; render(); };
+}
+function setTheme(t) {
+  state.theme = t; document.documentElement.setAttribute("data-theme", t);
+  $("#theme").textContent = t === "dark" ? "Light theme" : "Dark theme";
+  try { localStorage.setItem("gcb-theme", t); } catch (e) { }
+  if (S) render();
+}
+(function init() {
+  $("#asof").textContent = `Data as of ${dstr(D.meta.as_of)} | fictional company | refreshed ${D.meta.generated_at}`;
+  buildRoleSelect();
+  let t = null; try { t = localStorage.getItem("gcb-theme"); } catch (e) { }
+  if (!t) t = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  $("#theme").onclick = () => setTheme(state.theme === "dark" ? "light" : "dark");
+  const q = new URLSearchParams(location.search);
+  if (q.get("role")) { state.role = q.get("role"); $("#role").value = state.role; }
+  if (q.get("page")) state.page = q.get("page");
+  if (q.get("project")) state.project = q.get("project");
+  setTheme(q.get("theme") || t);
+  render();
+})();
+window.__GCB = { state, get scope() { return S; }, get kpis() { return K; }, go, render };
+</script>
+</body>
+</html>
