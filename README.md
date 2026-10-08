@@ -12,6 +12,8 @@ Eight core questions (margin fade, change-order exposure, billing position, back
 
 The dataset has **planted stories** with known answers, so the dashboard can be checked against the truth ([`docs/planted_findings.md`](docs/planted_findings.md)). For example: three jobs account for 88% of margin fade; two jobs carry about $4.3M of unapproved change orders; one job is billed $4.3M ahead of earned revenue; one job has a safety incident cluster; one supplier delivers on time only 20% of the time.
 
+https://bbou122.github.io/GCoast/
+
 ## Quick start
 
 ```bash
