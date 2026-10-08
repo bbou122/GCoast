@@ -1,5 +1,7 @@
 # Gulf Coast Builders: construction operations analytics
 
+https://bbou122.github.io/GCoast/
+
 > **SYNTHETIC DATA.** Gulf Coast Builders is a **fictional** contractor. Every row in this project was produced by a seeded random generator. Nothing here is real company data, nothing was taken from any real company's systems, and no real company's data, processes or software should be inferred from it.
 
 An end-to-end analytics project for a construction firm, built to show how raw operational exports become numbers leadership can trust: **synthetic ERP and CRM data → DuckDB warehouse (raw / staging / mart) → automated data-quality checks → a SQL metric layer → a role-aware interactive dashboard → weekly flagged-jobs alerts.**
@@ -11,8 +13,6 @@ An end-to-end analytics project for a construction firm, built to show how raw o
 Eight core questions (margin fade, change-order exposure, billing position, backlog and pipeline, win rate, safety clusters, forecast credibility, data trust) plus seven operations questions (open and late purchase orders, three-way match, subcontract position, AP and AR aging, equipment utilization, plant inventory, RFIs and schedule). The full list with owners and metrics is in [`docs/business_questions.md`](docs/business_questions.md).
 
 The dataset has **planted stories** with known answers, so the dashboard can be checked against the truth ([`docs/planted_findings.md`](docs/planted_findings.md)). For example: three jobs account for 88% of margin fade; two jobs carry about $4.3M of unapproved change orders; one job is billed $4.3M ahead of earned revenue; one job has a safety incident cluster; one supplier delivers on time only 20% of the time.
-
-https://bbou122.github.io/GCoast/
 
 ## Quick start
 
