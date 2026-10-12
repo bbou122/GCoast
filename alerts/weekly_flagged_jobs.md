@@ -2,7 +2,7 @@
 
 > **Synthetic data.** Gulf Coast Builders is a fictional company; nothing below describes a real business.
 
-**Data as of Wednesday, September 30, 2026** | report generated 2026-10-07 | data-quality checks: 82 passed, 0 failed, 0 warnings
+**Data as of Wednesday, September 30, 2026** | report generated 2026-10-12 | data-quality checks: 82 passed, 0 failed, 0 warnings
 
 ## Summary
 
